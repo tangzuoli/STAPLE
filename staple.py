@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import math
 from torch import autocast
+from utils import info
 
 
 class STAPLE(nn.Module):
@@ -39,23 +40,24 @@ class STAPLE(nn.Module):
                 param.requires_grad = True
 
         if self.args.train_stage == 2:
-            if self.args.llm_debias_path_stage1 is None or not os.path.isfile(self.args.llm_debias_path_stage1):
+            if not os.path.isfile(self.args.output + f"{self.args.dataset}-1.pth"):
                 raise NotImplementedError('Missing stage1 checkpoint!')
 
-            weights_stage1 = torch.load(self.args.llm_debias_path_stage1, map_location=next(self.llm_debias.parameters()).device)
-            print(self.load_state_dict(weights_stage1, strict=False))
+            weights_stage1 = torch.load(self.args.output + f"{self.args.dataset}-1.pth", map_location=next(self.llm_debias.parameters()).device)
+            info(self.load_state_dict(weights_stage1, strict=False))
             for param in self.llm.parameters():
                 param.requires_grad = False
             for param in self.en_de_bias.parameters():
                 param.requires_grad = True
 
         if self.args.train_stage == 3:
-            if self.args.llm_debias_path_stage1 is None or not os.path.isfile(self.args.llm_debias_path_stage1):
+            if not os.path.isfile(self.args.output + f"{self.args.dataset}-1.pth"):
                 raise NotImplementedError('Missing stage1 checkpoint!')
-            if self.args.llm_debias_path_stage2 is None or not os.path.isfile(self.args.llm_debias_path_stage2):
+            if not os.path.isfile(self.args.output + f"{self.args.dataset}-2.pth"):
                 raise NotImplementedError('Missing stage2 checkpoint!')
-            weights_stage1 = torch.load(self.args.llm_debias_path_stage1, map_location=next(self.llm_debias.parameters()).device)
-            weights_stage2 = torch.load(self.args.llm_debias_path_stage2, map_location=next(self.llm_debias.parameters()).device)
+
+            weights_stage1 = torch.load(self.args.output + f"{self.args.dataset}-1.pth", map_location=next(self.llm_debias.parameters()).device)
+            weights_stage2 = torch.load(self.args.output + f"{self.args.dataset}-2.pth", map_location=next(self.llm_debias.parameters()).device)
             weights_stage1.update(weights_stage2)
             weights = weights_stage1
             new_weights = {}
@@ -64,7 +66,7 @@ class STAPLE(nn.Module):
                     new_weights[key.replace('llm', 'llm_debias')] = weights[key]
                 if 'en_de_bias' in key:
                     new_weights[key.replace('en_de_bias', 'en_de_bias_debias')] = weights[key]
-            print(self.load_state_dict(new_weights, strict=False))
+            info(self.load_state_dict(new_weights, strict=False))
 
             for param in self.llm.parameters():
                 param.requires_grad = True
@@ -83,7 +85,7 @@ class STAPLE(nn.Module):
     def trainable2float(self):
         for name, param in self.named_parameters():
             if param.requires_grad:
-                print(f"Trainable Parameter:{name}")
+                info(f"Trainable Parameter:{name}")
                 param.data = param.data.float()
 
     def get_embedding(self, input_ids, attention_mask):
@@ -164,8 +166,8 @@ class STAPLE(nn.Module):
             scores_student_target = torch.gather(scores_student, dim=-1, index=target_item.unsqueeze(-1))
             scores_teacher_target = torch.gather(scores_teacher, dim=-1, index=target_item.unsqueeze(-1))
 
-            scores_debias_target_positive = scores_teacher_target > scores_teacher 
-            scores_debias_target_negative = scores_teacher_target < scores_teacher 
+            scores_debias_target_positive = scores_teacher_target > scores_teacher  # target是正样本
+            scores_debias_target_negative = scores_teacher_target < scores_teacher  # target是负样本
 
             bpr_loss_positive = -F.logsigmoid(scores_student_target - scores_student) * scores_debias_target_positive
             bpr_loss_negative = -F.logsigmoid(scores_student - scores_student_target) * scores_debias_target_negative
@@ -200,23 +202,17 @@ class STAPLE(nn.Module):
     def valid_step(self, inputs):
         seq_cls = self.get_embedding(input_ids=inputs['sequence_input_ids'], attention_mask=inputs['sequence_attention_mask'])
         item_cls = self.item_embs[inputs['negative_items']].to(seq_cls.device)
-
         with autocast(device_type='cuda', enabled=False):
-            item_cls = item_cls.float()
             seq_cls = seq_cls.float().unsqueeze(-1)
-            if self.args.valid_all:
-                scores = seq_cls.squeeze(-1) @ self.item_embs.float().t()
-                label = inputs['target_iid']
-            else:
-                scores = torch.bmm(item_cls, seq_cls).squeeze(-1) / math.sqrt(item_cls.size()[-1])
-                label = inputs['target_position']
+            scores = seq_cls.squeeze(-1) @ self.item_embs.float().t()
+            label = inputs['target_iid']
         return scores, label
 
     @torch.no_grad()
     def generate_embs(self, item_tokens):
         del self.item_embs
         torch.cuda.empty_cache()
-        print(f"GPU:{self.args.gpu} Generating Emebedding")
+        info(f"GPU:{self.args.gpu} Generating Emebedding")
         item_ids = item_tokens['item_ids']
         item_attn = item_tokens['item_attn']
         device = next(self.parameters()).device
