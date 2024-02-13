@@ -1,5 +1,5 @@
 Anonymous codes for KDD-2024 submission:  
-**TEXT IS FAIR: Mitigating Popularity Bias with Pre-trained Language Models in Sequential Recommendation.**
+**TEXT CAN BE FAIR: Mitigating Popularity Bias with PLMs by Learning Relative Preference**
 
 ### STEP 1: Preparing the dataset.
 Please keep the following folder structure, download the dataset from the official URL in the paper, and download the pre-trained model from the Huggingface:
