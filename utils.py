@@ -4,11 +4,9 @@ import torch
 import torch.distributed as dist
 import collections
 import logging
-from alps.util import logger
 
 def info(strings):
-    logger.info(strings)
-    # print(strings)
+    print(strings)
 
 
 class LossMeter(object):
