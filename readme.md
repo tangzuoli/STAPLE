@@ -5,7 +5,7 @@ Anonymous codes for KDD-2024 submission:
 * conda create -n staple python=3.8
 * conda activate staple
 * while read requirement; do pip install "$requirement"; done < requirements.txt (in Linux)
-* Download the torch_scatter from https://pytorch-geometric.com/whl/, and pip the torch_scatter through the .whl
+* Download the torch_scatter from https://pytorch-geometric.com/whl/, and install the torch_scatter through the .whl file.
   
 ### STEP 1: Prepare the dataset.
 Please keep the following folder structure, download the dataset from the official URL in the paper, and download the pre-trained model from the Huggingface:
