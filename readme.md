@@ -1,4 +1,4 @@
-Anonymous codes for KDD-2024 submission:  
+Anonymous codes for CIKM-2024 submission:  
 **TEXT CAN BE FAIR: Mitigating Popularity Bias with PLMs by Learning Relative Preference**
 
 ### STEP 0: Prepare the environment
@@ -48,5 +48,5 @@ Please keep the following folder structure, download the dataset from the offici
 ### Notes:
 * In our experiments, we use 6 gpus and the batch size on each gpu is 16. Thus the total batch size is 96.
 * The batch size on each gpu is important in stage 3 because the value of sampled cross-entropy loss is related to the negatives, and we sample (batch_size * 10) negative items for each batch. Changing the batch size may not get the ideal output.
-* We have tested the codes for a quick start and reproducing the results reported in the paper. If you have any questions, we will answer them during the Rebattle period.
+* We have tested the codes for a quick start and reproducing the results reported in the paper. If you have any questions and find any bug, please let us know in the review, and we will fix the bug in the next version
 * If you want to use OPT-125M directly from Hugging Face instead of downloading it locally, simply set the root_path to an empty string ("").
