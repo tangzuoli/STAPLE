@@ -1,4 +1,4 @@
-Code for CIKM-2024 Full Research Paer:  
+Code for CIKM-2024 Full Paper:  
 **TEXT CAN BE FAIR: Mitigating Popularity Bias with PLMs by Learning Relative Preference**
 
 ### STEP 0: Prepare the environment
