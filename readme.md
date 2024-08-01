@@ -1,4 +1,4 @@
-Anonymous codes for CIKM-2024 submission:  
+Code for CIKM-2024 Full Research Paer:  
 **TEXT CAN BE FAIR: Mitigating Popularity Bias with PLMs by Learning Relative Preference**
 
 ### STEP 0: Prepare the environment
